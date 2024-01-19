@@ -7,15 +7,13 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision import transforms
-from config import Config
+from config import Config, GetLastParams
 from torch.utils.tensorboard import SummaryWriter
 from torch.nn import BCELoss
 
-
-def train():
+def train(config):
     # 加载参数配置
-    cfg = Config()
-    device = cfg.device
+    device = config.device
     # 数据加载配置
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -25,45 +23,47 @@ def train():
     ])
 
     # 加载数据集
-    dataset = datasets.ImageFolder(cfg.data_path, transform=transform)
+    dataset = datasets.ImageFolder(config.data_path, transform=transform)
     dataloader = DataLoader(
         dataset,
-        batch_size=cfg.batch_size,
+        batch_size=config.batch_size,
         shuffle=True,
-        num_workers=cfg.num_works,
+        num_workers=config.num_works,
         drop_last=True
     )
 
     # 实例化网络
-    gen = NetG(cfg).to(device)
-    disc = NetD(cfg).to(device)
-    # 加载预训练参数(如果存在)
-    if os.path.exists(cfg.pre_gen_path):
-        gen.load_state_dict(torch.load(cfg.pre_gen_path))
-        print("生成器预训练参数加载成功!")
-    if os.path.exists(cfg.pre_disc_path):
-        disc.load_state_dict(torch.load(cfg.pre_disc_path))
-        print("判别器预训练参数加载成功!")
-
+    gen = NetG(config).to(device)
+    disc = NetD(config).to(device)
     # 定义优化器
-    opt_gen = Adam(gen.parameters(), cfg.gen_lr)
-    opt_disc = Adam(disc.parameters(), cfg.disc_lr)
+    opt_gen = Adam(gen.parameters(), config.gen_lr)
+    opt_disc = Adam(disc.parameters(), config.disc_lr)
     criterion = BCELoss().to(device)
 
+    # 加载预训练参数(如果存在)
+    if os.path.exists(config.pre_gen_path):
+        gen.load_state_dict(torch.load(config.pre_gen_path))
+        print("生成器预训练参数加载成功!")
+    if os.path.exists(config.pre_disc_path):
+        disc.load_state_dict(torch.load(config.pre_disc_path))
+        print("判别器预训练参数加载成功!")
+    # 自动加载最新参数
+    if cfg.autoLoad and os.path.exists(GetLastParams()):
+        gen.load_state_dict(torch.load(GetLastParams() + "/last_gen_params.pt"))
+        disc.load_state_dict(torch.load(GetLastParams() + "/last_disc_params.pt"))
     # 创建运行数据文件夹
     start_time = datetime.now().strftime("%Y-%m%d-%H%M")
     if not os.path.exists(f"checkpoints/{start_time}"):
         os.mkdir(f"checkpoints/{start_time}")
+
     # 运行日志输出(生成器生成的数据)
-    fixed_noise = torch.randn(cfg.batch_size, cfg.noise_dim, 1, 1).to(device)
+    fixed_noise = torch.randn(config.batch_size, config.noise_dim, 1, 1).to(device)
     writer_fake = SummaryWriter(f"runs/Animation/{start_time}/fake")
     writer_real = SummaryWriter(f"runs/Animation/{start_time}/real")
     step = 0
 
     # 模型训练
-    min_gloss = 999
-    # 模型迭代
-    for epoch in range(cfg.epochs):
+    for epoch in range(config.epochs):
         # 模型指标
         lossD_all = 0
         lossG_all = 0
@@ -81,7 +81,7 @@ def train():
             step 3 : 计算真图, 假图损失, 判别器损失
             """
             # 生成器基于随机噪声"生成器"生成一组假图
-            noise = torch.randn(batch_size, cfg.noise_dim, 1, 1).to(device)
+            noise = torch.randn(batch_size, config.noise_dim, 1, 1).to(device)
             fake = gen.forward(noise)
             # 计算损失
             disc_real_labs = disc.forward(real).view(-1)
@@ -134,7 +134,7 @@ def train():
         """
         保存模型
         """
-        if cfg.fullsave:
+        if config.modelSave:
             torch.save(gen, f"checkpoints/{start_time}/last_gen_model.pt")
             torch.save(disc, f"checkpoints/{start_time}/last_disc_model.pt")
         else:
@@ -145,4 +145,5 @@ def train():
 
 
 if __name__ == '__main__':
-    train()
+    cfg = Config()
+    train(config=cfg)

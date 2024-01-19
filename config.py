@@ -1,4 +1,5 @@
 import torch
+import os
 
 
 class Config(object):
@@ -14,7 +15,8 @@ class Config(object):
     gen_lr = 3e-4
     disc_lr = 1e-4
     # 保存形式
-    fullsave = True
+    modelSave = False
+    autoLoad = False
     # 存储路径
     data_path = "dataset"
     create_model_path = "checkpoints/2024-0117-1817/gen3_params_7.4841.pt"  # "your img create path"
@@ -22,3 +24,13 @@ class Config(object):
     pre_disc_path = "checkpoints/2024-0118-1138/last_disc_params.pt"  # "your pre trained checkpoints"
     # 运行设备
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+def GetLastParams():
+    path_list = os.listdir("checkpoints")
+    if len(path_list) > 1:
+        target_path = "checkpoints/" + sorted(path_list)[-2]
+    else:
+        print("No checkpoints found")
+        target_path = ""
+    return target_path
