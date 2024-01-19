@@ -61,9 +61,9 @@ def train():
     step = 0
 
     # 模型训练
-    min_gloss = 100
+    min_gloss = 999
     # 模型迭代
-    for epoch in range(5):
+    for epoch in range(cfg.epochs):
         # 模型指标
         lossD_all = 0
         lossG_all = 0
@@ -138,8 +138,10 @@ def train():
 
             if lossG_all < min_gloss:
                 min_gloss = lossG_all
-                torch.save(gen.state_dict(), f"checkpoints/{start_time}/gen_{epoch + 1}_params_({lossG_all:.4f}).pt")
-                torch.save(disc.state_dict(), f"checkpoints/{start_time}/disc_{epoch + 1}_params_({lossD_all:.4f}).pt")
+                if not os.path.exists(f"checkpoints/{start_time}/epoch{epoch}"):
+                    os.mkdir(f"checkpoints/{start_time}/epoch{epoch}")
+                torch.save(gen.state_dict(), f"checkpoints/{start_time}/epoch{epoch}/gen_params_({lossG_all:.4f}).pt")
+                torch.save(disc.state_dict(), f"checkpoints/{start_time}/epoch{epoch}/disc_params_({lossD_all:.4f}).pt")
                 print("min loss checkpoints saved")
 
         torch.save(gen.state_dict(), f"checkpoints/{start_time}/last_gen_params.pt")
