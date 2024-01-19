@@ -135,8 +135,8 @@ def train(config):
         保存模型
         """
         if config.modelSave:
-            torch.save(gen, f"checkpoints/{start_time}/last_gen_model.pt")
-            torch.save(disc, f"checkpoints/{start_time}/last_disc_model.pt")
+            torch.save(gen, f"models/{start_time}/gen_model.pt")
+            torch.save(disc, f"models/{start_time}/disc_model.pt")
         else:
             torch.save(gen.state_dict(), f"checkpoints/{start_time}/last_gen_params.pt")
             torch.save(disc.state_dict(), f"checkpoints/{start_time}/last_disc_params.pt")
