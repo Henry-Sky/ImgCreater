@@ -134,18 +134,12 @@ def train():
         """
         保存模型
         """
-        if epoch > cfg.select_epoch:
-
-            if lossG_all < min_gloss:
-                min_gloss = lossG_all
-                if not os.path.exists(f"checkpoints/{start_time}/epoch{epoch}"):
-                    os.mkdir(f"checkpoints/{start_time}/epoch{epoch}")
-                torch.save(gen.state_dict(), f"checkpoints/{start_time}/epoch{epoch}/gen_params_({lossG_all:.4f}).pt")
-                torch.save(disc.state_dict(), f"checkpoints/{start_time}/epoch{epoch}/disc_params_({lossD_all:.4f}).pt")
-                print("min loss checkpoints saved")
-
-        torch.save(gen.state_dict(), f"checkpoints/{start_time}/last_gen_params.pt")
-        torch.save(disc.state_dict(), f"checkpoints/{start_time}/last_disc_params.pt")
+        if cfg.fullsave:
+            torch.save(gen, f"checkpoints/{start_time}/last_gen_model.pt")
+            torch.save(disc, f"checkpoints/{start_time}/last_disc_model.pt")
+        else:
+            torch.save(gen.state_dict(), f"checkpoints/{start_time}/last_gen_params.pt")
+            torch.save(disc.state_dict(), f"checkpoints/{start_time}/last_disc_params.pt")
 
         print(f"Epoch:{epoch + 1}, LossD:{lossD_all:.4f}, LossG:{lossG_all:.4f}")
 

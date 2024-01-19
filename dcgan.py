@@ -1,5 +1,6 @@
 import torch.nn as nn
 
+
 class NetG(nn.Module):
     def __init__(self, config):
         super(NetG, self).__init__()
@@ -84,9 +85,9 @@ class NetD(nn.Module):
 
     def _init_weights(self):
         for layer in self.disc:
-            if isinstance(layer,nn.Conv2d):
+            if isinstance(layer, nn.Conv2d):
                 layer.weight.data.normal_(0.0, 0.02)
-            if isinstance(layer,nn.BatchNorm2d):
+            if isinstance(layer, nn.BatchNorm2d):
                 layer.weight.data.normal_(1.0, 0.02)
                 layer.bias.data.fill_(0)
 

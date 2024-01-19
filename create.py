@@ -6,6 +6,7 @@ from dcgan import NetG, NetD
 from config import Config
 from torchvision.utils import save_image
 
+
 def create():
     cfg = Config()
     device = cfg.device
@@ -17,7 +18,6 @@ def create():
         img = gen.forward(fixed_noise)
         save_image(img, f'imgs/{time}.png')
 
+
 if __name__ == '__main__':
     create()
-
-
