@@ -31,6 +31,6 @@ def GetLastParams():
     if len(path_list) > 1:
         target_path = "checkpoints/" + sorted(path_list)[-2]
     else:
-        print("No checkpoints found")
+        print("No checkpoints found!")
         target_path = ""
     return target_path
