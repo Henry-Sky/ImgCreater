@@ -11,6 +11,7 @@ from config import Config, GetLastParams
 from torch.utils.tensorboard import SummaryWriter
 from torch.nn import BCELoss
 
+
 def train(config):
     # 加载参数配置
     device = config.device
@@ -19,7 +20,8 @@ def train(config):
         transforms.ToTensor(),
         transforms.Normalize(
             (0.5, 0.5, 0.5),
-            (0.5, 0.5, 0.5))
+            (0.5, 0.5, 0.5)
+        )
     ])
 
     # 加载数据集
@@ -48,9 +50,14 @@ def train(config):
         disc.load_state_dict(torch.load(config.pre_disc_path))
         print("判别器预训练参数加载成功!")
     # 自动加载最新参数
-    if cfg.autoLoad and os.path.exists(GetLastParams()):
-        gen.load_state_dict(torch.load(GetLastParams() + "/last_gen_params.pt"))
-        disc.load_state_dict(torch.load(GetLastParams() + "/last_disc_params.pt"))
+    if cfg.autoLoad:
+        if os.path.exists(GetLastParams()):
+            gen.load_state_dict(torch.load(GetLastParams() + "/last_gen_params.pt"))
+            disc.load_state_dict(torch.load(GetLastParams() + "/last_disc_params.pt"))
+            print(f"自动加载参数:{GetLastParams()}!")
+        else:
+            print("找不到参数! 将从零开始训练")
+
     # 创建运行数据文件夹
     start_time = datetime.now().strftime("%Y-%m%d-%H%M")
     if not os.path.exists(f"checkpoints/{start_time}"):
@@ -58,8 +65,10 @@ def train(config):
 
     # 运行日志输出(生成器生成的数据)
     fixed_noise = torch.randn(config.batch_size, config.noise_dim, 1, 1).to(device)
-    writer_fake = SummaryWriter(f"runs/Animation/{start_time}/fake")
-    writer_real = SummaryWriter(f"runs/Animation/{start_time}/real")
+    writer_fake = SummaryWriter(f"runs/{start_time}/imgs/fake")
+    writer_real = SummaryWriter(f"runs/{start_time}/imgs/real")
+    writer_disc = SummaryWriter(f"runs/{start_time}/graphs/disc")
+    writer_gen = SummaryWriter(f"runs/{start_time}/graphs/gen")
     step = 0
 
     # 模型训练
@@ -83,9 +92,17 @@ def train(config):
             # 生成器基于随机噪声"生成器"生成一组假图
             noise = torch.randn(batch_size, config.noise_dim, 1, 1).to(device)
             fake = gen.forward(noise)
+            # 记录生成器网络结构
+            if epoch == 0 and batch_idx == 0:
+                writer_gen.add_graph(gen, noise)
+                writer_gen.close()
             # 计算损失
             disc_real_labs = disc.forward(real).view(-1)
             disc_fake_labs = disc.forward(fake).view(-1)
+            # 记录判别器网络结构
+            if epoch == 0 and batch_idx == 0:
+                writer_disc.add_graph(disc,real)
+                writer_disc.close()
             lossD_real = criterion(disc_real_labs, torch.ones_like(disc_real_labs))
             lossD_fake = criterion(disc_fake_labs, torch.zeros_like(disc_fake_labs))
             lossD = (lossD_real + lossD_fake) / 2
@@ -137,9 +154,12 @@ def train(config):
         if config.modelSave:
             torch.save(gen, f"models/{start_time}/gen_model.pt")
             torch.save(disc, f"models/{start_time}/disc_model.pt")
-        else:
-            torch.save(gen.state_dict(), f"checkpoints/{start_time}/last_gen_params.pt")
-            torch.save(disc.state_dict(), f"checkpoints/{start_time}/last_disc_params.pt")
+        if (epoch + 1) % 50 == 0:
+            torch.save(gen.state_dict(), f"checkpoints/{start_time}/epoch{epoch + 1}_gen_params.pt")
+            torch.save(disc.state_dict(), f"checkpoints/{start_time}/epoch{epoch + 1}_disc_params.pt")
+        # 默认保存最新参数
+        torch.save(gen.state_dict(), f"checkpoints/{start_time}/last_gen_params.pt")
+        torch.save(disc.state_dict(), f"checkpoints/{start_time}/last_disc_params.pt")
 
         print(f"Epoch:{epoch + 1}, LossD:{lossD_all:.4f}, LossG:{lossG_all:.4f}")
 
