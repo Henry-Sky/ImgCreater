@@ -1,7 +1,7 @@
 import os
 import torch
 from datetime import datetime
-from dcgan import NetG, NetD
+from dcgan import NetG
 from config import Config, GetLastParams
 from torchvision.utils import save_image
 

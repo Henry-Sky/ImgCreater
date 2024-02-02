@@ -3,17 +3,17 @@ import os
 
 
 class Config(object):
-    noise_dim = 256
+    noise_dim = 100
     batch_size = 40
     num_works = 4
     # Epoch: 迭代次数
     epochs = 500
     # 网络隐藏特征图尺寸 (判别器的复杂度要略低于生成器,避免过度指导图片生成)
-    gen_feature_map = 256
-    disc_feature_map = 128
+    gen_feature_map = 64
+    disc_feature_map = 64
     # 学习率
-    gen_lr = 2e-4
-    disc_lr = 1e-4
+    gen_lr = 3e-4
+    disc_lr = 2e-4
     # 保存形式
     modelSave = False
     autoLoad = True
